@@ -1,0 +1,12 @@
+{
+  "source_folder": "input",
+  "dest_folder": "output",
+  "class_names": [
+    "Beech",
+    "Oak",
+    "Spruce",
+    "Pine",
+    "Birch",
+    "Other"
+  ]
+}
