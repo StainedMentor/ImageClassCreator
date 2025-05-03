@@ -1,23 +1,34 @@
 import os
 from PIL import Image
 
-source_folder = "imgc"
-output_folder = os.path.join(source_folder, "compressed")
+source_folder = "minibark"
 
-os.makedirs(output_folder, exist_ok=True)
+# Set the target dimension and mode: 'width' or 'height'
+target_size = 360
+resize_mode = 'width'  # Change to 'height' to fix height instead
 
-# Target height in pixels
-target_height = 360
+def compress_images_recursively(input_dir):
+    for root, _, files in os.walk(input_dir):
+        for filename in files:
+            if filename.lower().endswith((".jpg", ".jpeg")):
+                image_path = os.path.join(root, filename)
 
-for filename in os.listdir(source_folder):
-    if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
-        image_path = os.path.join(source_folder, filename)
-        with Image.open(image_path) as img:
-            width, height = img.size
-            aspect_ratio = width / height
-            new_width = int(target_height * aspect_ratio)
-            resized_img = img.resize((new_width, target_height), Image.LANCZOS)
-            output_path = os.path.join(output_folder, filename)
-            resized_img.save(output_path, quality=85, optimize=True)
+                with Image.open(image_path) as img:
+                    width, height = img.size
 
-print("Compression complete.")
+                    if resize_mode == 'width':
+                        aspect_ratio = height / width
+                        new_width = target_size
+                        new_height = int(target_size * aspect_ratio)
+                    elif resize_mode == 'height':
+                        aspect_ratio = width / height
+                        new_height = target_size
+                        new_width = int(target_size * aspect_ratio)
+                    else:
+                        raise ValueError("resize_mode must be 'width' or 'height'")
+
+                    resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+                    resized_img.save(image_path, quality=85, optimize=True)
+
+compress_images_recursively(source_folder)
+print("Recursive compression complete.")
