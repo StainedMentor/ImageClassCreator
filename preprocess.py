@@ -6,22 +6,23 @@ from torchvision.utils import make_grid
 import torchvision.transforms.functional as TF
 from torch.utils.data import DataLoader
 
+from constants import SIZE, BATCH_SIZE
 
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(15),
     transforms.ColorJitter(brightness=0.4, contrast=0.3, saturation=0.3),
-    transforms.RandomResizedCrop(size=(128, 128), scale=(0.1, 1), ratio=(0.5, 2)),
+    transforms.RandomResizedCrop(size=SIZE, scale=(0.1, 1), ratio=(0.5, 2)),
     transforms.ToTensor()
 ])
 
 val_test_transform = transforms.Compose([
-    transforms.CenterCrop((128, 128)),
+    transforms.CenterCrop(SIZE),
     transforms.ToTensor()
 ])
 def load_preprocessed(path, transform):
     dataset = ImageFolder(path,transform = transform)
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     return loader
 
 
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     train_loader, test_loader, val_loader = get_loaders()
 
     # Specify which loader to show HERE:
-    images, labels = next(iter(train_loader))
+    images, labels = next(iter(val_loader))
     num_samples = 7
     n_columns = 7
 

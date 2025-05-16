@@ -1,0 +1,2 @@
+SIZE = (128, 128)
+BATCH_SIZE = 128
