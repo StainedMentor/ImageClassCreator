@@ -7,6 +7,8 @@ from metrics import plot_metric_trends
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
+MINE_HARD = False
+hard_ratio = 0.2
 
 train_loader, _, val_loader = get_loaders()
 num_classes = len(train_loader.dataset.classes)
@@ -14,14 +16,18 @@ num_classes = len(train_loader.dataset.classes)
 
 # KEEP FOR TRAINING RESNET AND FURTHER TRAINING
 model = get_resnet50(num_classes=6).to(device)
-# state_dict = torch.load("restnet3.pth", map_location="cpu")
-# model.load_state_dict(state_dict)
+state_dict = torch.load("extra.pth", map_location="cpu")
+model.load_state_dict(state_dict)
 
 
 # model = CustomCNN(num_classes).to(device)
-# state_dict = torch.load("metal_optimized_model2.pth", map_location="cpu")
+# state_dict = torch.load("custom1.pth", map_location="cpu")
 # model.load_state_dict(state_dict)
-criterion = nn.CrossEntropyLoss()
+if MINE_HARD:
+    criterion = nn.CrossEntropyLoss(reduction='none')
+else:
+    criterion = nn.CrossEntropyLoss()
+
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 num_epochs = 40
 
@@ -41,7 +47,20 @@ for epoch in range(num_epochs):
 
         optimizer.zero_grad()
         outputs = model(images)
-        loss = criterion(outputs, labels)
+        if MINE_HARD:
+            losses = criterion(outputs, labels)  # shape [batch_size]
+
+            # 2) pick indices of top-k hardest
+            k = int(hard_ratio * losses.size(0))
+            _, hard_idxs = torch.topk(losses, k, largest=True)
+
+            # 3) re-compute loss on only hard examples (or zero out easy ones)
+            hard_outputs = outputs[hard_idxs]
+            hard_labels = labels[hard_idxs]
+            loss = nn.CrossEntropyLoss()(hard_outputs, hard_labels)
+
+        else:
+            loss = criterion(outputs, labels)
         loss.backward()
 
         optimizer.step()
@@ -95,4 +114,4 @@ for epoch in range(num_epochs):
 plot_metric_trends(train_losses, train_accuracies, val_accuracies, val_f1_scores)
 plot_multiclass_roc(all_labels, all_logits, num_classes=num_classes, class_names=train_loader.dataset.classes)
 plot_confusion_matrix(conf_matrix, class_names=train_loader.dataset.classes, normalize=True)
-torch.save(model.state_dict(), "extra.pth")
+torch.save(model.state_dict(), "extra1.pth")
