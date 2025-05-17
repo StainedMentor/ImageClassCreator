@@ -1,6 +1,6 @@
-import sklearn.metrics
+import seaborn as sns
 import torch
-from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import f1_score, confusion_matrix
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
@@ -11,23 +11,14 @@ def compute_accuracy(preds, labels):
     total = labels.size(0)
     return 100. * correct / total
 
-def compute_metrics(preds, labels, num_classes):
+def compute_metrics(preds, labels):
     preds_np = preds.cpu().numpy()
     labels_np = labels.cpu().numpy()
 
     f1 = f1_score(labels_np, preds_np, average='weighted')
     conf_matrix = confusion_matrix(labels_np, preds_np)
 
-    # Convert to one-hot for ROC AUC
-    try:
-        labels_one_hot = torch.nn.functional.one_hot(labels, num_classes=num_classes).cpu().numpy()
-        preds_proba = torch.nn.functional.softmax(preds.float(), dim=1).cpu().numpy()
-        sklearn.metrics.roc_curve()
-        roc_auc = roc_auc_score(labels_one_hot, preds_proba, average='macro', multi_class='ovr')
-    except Exception as e:
-        roc_auc = None
-
-    return f1, roc_auc, conf_matrix
+    return f1, conf_matrix
 
 
 
@@ -91,8 +82,6 @@ def plot_metric_trends(train_losses, train_accs, val_accs, f1_scores):
 
     plt.tight_layout()
     plt.show()
-
-import seaborn as sns
 
 def plot_confusion_matrix(conf_matrix, class_names=None, normalize=False):
     if normalize:
